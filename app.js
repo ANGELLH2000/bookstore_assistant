@@ -1,3 +1,4 @@
+import OllamaManager from "./ollamaClient.js";
 let a = {
     "generos": {
         "obligatorio": true,
@@ -35,60 +36,57 @@ let a = {
         "pregunta": "¿Recuerdas algún libro o historia que hayas disfrutado antes? ¿Por qué te gustó?"
     }
 }
-class Base {
-    constructor(parameters) {
 
+const ollama = new OllamaManager()
+
+
+
+async function comenzar() {
+    let entrada = prompt('Hola, te voy a ayudar con tu recomendación, dejame tu peticion');
+    try {
+        let base = await ollama.evaluacion_inicial(entrada)
+
+        // NIVEL I
+        if(base['generos'].length== 0){
+            console.log("Si entro")
+            let entrada_genero=prompt("¿Qué géneros literarios te interesan más? (Ejemplo: misterio, fantasía, ciencia ficción, no ficción)")
+            try {
+                let {generos}=await ollama.evaluacion_unitaria(entrada_genero,'generos')
+                base['generos'] =generos
+                console.log(base)
+            } catch (error) {
+                console.error("Error al evaluar el genero:", error);
+            }
+            
+        }
+        console.log("Esta fue la peticion: ", entrada)
+        console.log("Esta es tu base: ", base)
+    } catch {
+        console.error("Error al evaluar:", error);
+    }
+}
+async function hola(){
+    let entrada_genero=prompt("¿Qué géneros literarios te interesan más? (Ejemplo: misterio, fantasía, ciencia ficción, no ficción)")
+    let base={}
+    try {
+        let {generos}= await ollama.evaluacion_unitaria(entrada_genero,'generos')
+        base.generos=generos
+        console.log(base)
+    } catch (error) {
+        console.error("Error al evaluar el genero:", error);
     }
 }
 
+const btn = document.getElementById("start");
+btn.onclick = comenzar;
 
-///////////////////////////////
 
-class ProductManager {
-    constructor() {
-        this.products = []
-        console.log("Hola - ", this.products, " -");
-    }
-    addProduct(objet) {
-        const newProduct = { id: this.products.length + 1, ...objet }
-        this.products.push(newProduct)
-    }
 
-}
-const productos = new ProductManager();
-for (let index = 0; index < 20; index++) {
+//const lprompt = "Solo he leido el Caballero Carmelo y Dorian Grey, pero aparte de ese libro nunca he leido otro. Me gustaria que me ayudes a encontrar libros sobre  misterio";
 
-    productos.addProduct({
-        title: "Producto_" + index,
-        description: "Descripcion del producto",
-        price: 23.23,
-        SKU: 220020232,
-        stock: 3
-
-    })
-
-}
-
-//Importar fs
-//const fs=require("fs")
-import fs from "fs";
-//Crear Archivo
-
-fs.writeFileSync("./test.txt","1.- Texto en el archivo")
-
-// Chequear si existe
-
-if(fs.readFileSync("./test.txt")){
-    let contenido = fs.readFileSync("./test.txt","utf-8");
-    console.log(contenido)
-
-// Modificando texto    
-    fs.appendFileSync("./test.txt","\n2.- Angel Este es el Texto Agregado")
-    contenido = fs.readFileSync("./test.txt","utf-8");
-    console.log(contenido)
-
-//Elimiar Archivo
-    fs.unlinkSync("./test.txt");    
-
-    fs.writeFileSync("./test2.txt",contenido)
-}
+//ollama.saludar(entrada)
+// ollama.evaluacion_inicial(entrada).then((resultados) => {
+//     console.log(resultados);
+// }).catch((error) => {
+//     console.error("Error al evaluar:", error);
+// });

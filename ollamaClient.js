@@ -1,13 +1,3 @@
-import axios from "axios";
-let base = {
-    "generos": [],
-    "temas_principales": [],
-    "ambientacion": [],
-    "autores": [],
-    "cantidad_hojas": [],
-    "contexto_emocional": [],
-    "lecturas_previas": [],
-}
 class OllamaManager {
     constructor() {
         this.baseURL = 'http://localhost:11434';
@@ -42,6 +32,20 @@ class OllamaManager {
                     "lecturas_previas": { "type": "array" }
                 },
                 "required": ["lecturas_previas"]
+            },
+            cantidad_hojas: {
+                "type": "object",
+                "properties": {
+                    "cantidad_hojas": { "type": "array" }
+                },
+                "required": ["cantidad_hojas"]
+            },
+            ambientacion: {
+                "type": "object",
+                "properties": {
+                    "ambientacion": { "type": "array" }
+                },
+                "required": ["ambientacion"]
             }
         }
 
@@ -53,8 +57,8 @@ class OllamaManager {
             stream: this.stream,
             prompt: `
             Evalúa únicamente el siguiente texto: "${prompt}". 
-            Responde estrictamente a la pregunta: "${descripcion}". 
-            Si no encuentras una respuesta directa en el texto, devuelve un JSON con un array vacío . 
+            Responde estrictamente a la pregunta con los datos del texto: "${descripcion}". 
+            Si no encuentras una respuesta directa en el texto, devuelve un array vacío no se necesita ingresar ninguna explicación.
             Responde estrictamente en el formato JSON y sin agregar propiedades`,
             format: format,
         };
@@ -90,21 +94,30 @@ class OllamaManager {
 
 
     }
+    async evaluacion_unitaria(prompt,format) {
+
+        try {
+            const dato = await this.evaluar(prompt, "¿Se pide o recomienda un género de libro?", this.formats[format])
+            return this.consolidar([dato])
+
+        } catch (error) {
+            console.log("Error al hacer la evalucacion unitaria", error.message)
+            return null
+        }
+
+
+
+    }
     async evaluacion_inicial(prompt) {
 
         try {
-            const generos = await this.evaluar(prompt, "¿Se pide o recomienda un género?", this.formats.generos)
-            //console.log("Géneros evaluados:", generos);
-            const temas_principales = await this.evaluar(prompt, "¿Se pide o recomienda un tema principal para el texto?", this.formats.temas_principales)
-            //console.log("Temas principales evaluados:", temas_principales);
+            const generos = await this.evaluar(prompt, "¿Se pide o recomienda un género de libro?", this.formats.generos)
+            const temas_principales = await this.evaluar(prompt, "¿Se pide o recomienda un tema o temas que le gustaría para el libro?", this.formats.temas_principales)
             const autores = await this.evaluar(prompt, "¿Se pide o recomienda algún autor de algun libro?", this.formats.autores)
-            //console.log("Temas principales evaluados:", autores);
             const lecturas_previas = await this.evaluar(prompt, "¿Se habla de algún libro?", this.formats.lecturas_previas)
-            //console.log("Temas principales evaluados:", lecturas_previas);
-
-            return this.consolidar([generos, temas_principales, autores, lecturas_previas])
-
-            //return { generos, temas_principales, autores, lecturas_previas };
+            const cantidad_hojas = await this.evaluar(prompt, "¿Se pide o recomienda una cantidad de hojas para el libro?", this.formats.cantidad_hojas)
+            const ambientacion = await this.evaluar(prompt, "¿Se habla , pide o recomienda alguna ambientación para la historia del libro?", this.formats.ambientacion)
+            return this.consolidar([generos, temas_principales, autores, lecturas_previas, cantidad_hojas, ambientacion])
 
         } catch (error) {
             console.log("Error al hacer la evalucacion inicial", error.message)
@@ -114,16 +127,17 @@ class OllamaManager {
 
 
     }
-
+    saludar(data) {
+        console.log("Este es tu texto", data)
+    }
 
 }
-let ollama = new OllamaManager()
-const prompt = "He leido Dorian Gray y me facino el libro, me gustaria que me recomiendes libros del autor : Emile Zola y Margaret Adwood sobre temas sociales";
+export default OllamaManager;
+//let ollama = new OllamaManager()
+// const prompt = "Solo he leido el Caballero Carmelo y Dorian Grey, pero aparte de ese libro nunca he leido otro. Me gustaria que me ayudes a encontrar libros sobre  misterio";
 
-ollama.evaluacion_inicial(prompt).then((resultados) => {
-    console.log(resultados);
-}).catch((error) => {
-    console.error("Error al evaluar:", error);
-});
-//"{"generos":[]}{"temas_principales":[]}{"autores":[]}{"lecturas_previas":[{"titulo":"DorianGray","author":""}]}"
-//ollama.consolidar(['{\n  "lecturas_previas": ["Dorian Gray"]\n}','{"temas_principales":[]}'])
+// ollama.evaluacion_inicial(prompt).then((resultados) => {
+//     console.log(resultados);
+// }).catch((error) => {
+//     console.error("Error al evaluar:", error);
+// });
